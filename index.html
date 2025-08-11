@@ -91,26 +91,40 @@
     >
       <a-camera gps-camera rotation-reader></a-camera>
 
-      <!-- Geolocated images -->
+      <!-- Geolocated images at 1m height (y=1) -->
       <a-image src="assets/master.jpg"
                gps-entity-place="latitude: 53.60394649745449; longitude: 9.476626047147601"
                look-at="[gps-camera]"
                width="5" height="3.125"
-               position="0 2 0">
+               position="0 1 0">
       </a-image>
 
       <a-image src="assets/cavethrone.jpg"
                gps-entity-place="latitude: 53.60390604383201; longitude: 9.476505355843118"
                look-at="[gps-camera]"
                width="5" height="3.125"
-               position="0 2 0">
+               position="0 1 0">
       </a-image>
 
       <a-image src="assets/jacob.jpg"
                gps-entity-place="latitude: 53.60386941687011; longitude: 9.476397562845984"
                look-at="[gps-camera]"
                width="5" height="3.125"
-               position="0 2 0">
+               position="0 1 0">
+      </a-image>
+
+      <a-image src="assets/sorc.jpg"
+               gps-entity-place="latitude: 53.60385703604552; longitude: 9.466353526172494"
+               look-at="[gps-camera]"
+               width="5" height="3.125"
+               position="0 1 0">
+      </a-image>
+
+      <a-image src="assets/people.jpg"
+               gps-entity-place="latitude: 53.60391269994378; longitude: 9.466247989182781"
+               look-at="[gps-camera]"
+               width="5" height="3.125"
+               position="0 1 0">
       </a-image>
 
     </a-scene>
@@ -121,9 +135,11 @@
 <script>
   // Points (for map pins). Extend this list to add more images/locations.
   const points = [
-    {title: "MASTER",    lat: 53.60394649745449, lon: 9.476626047147601},
-    {title: "CAVE THRONE", lat: 53.60390604383201, lon: 9.476505355843118},
-    {title: "JACOB",     lat: 53.60386941687011, lon: 9.476397562845984},
+    {title: "MASTER",        lat: 53.60394649745449, lon: 9.476626047147601},
+    {title: "CAVE THRONE",   lat: 53.60390604383201, lon: 9.476505355843118},
+    {title: "JACOB",         lat: 53.60386941687011, lon: 9.476397562845984},
+    {title: "POSTER BOY",    lat: 53.60385703604552, lon: 9.466353526172494},
+    {title: "SUIT SQUAD",    lat: 53.60391269994378, lon: 9.466247989182781},
   ];
 
   const map = L.map('map');
