@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>AR-Bildergalerie – Karte & AR</title>
+
+  <!-- Leaflet (Map) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- A-Frame & AR.js (Location-based) -->
+  <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.4/aframe/build/aframe-ar-nft.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/aframe-look-at-component@1.0.0/dist/aframe-look-at-component.min.js"></script>
+
+  <style>
+    html, body { margin:0; padding:0; height:100%; font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
+    /* Map view */
+    #mapView { position:fixed; inset:0; background:#f5f5f5; z-index: 3; display:flex; flex-direction:column; }
+    #topbar { background:#111; color:#fff; padding:10px 12px; display:flex; align-items:center; gap:8px; }
+    #topbar h1 { font-size:16px; margin:0; font-weight:700; }
+    #topbar button {
+      appearance:none; background:#fff; color:#111; border:0; border-radius:10px; padding:8px 12px;
+      font-weight:600; margin-left:auto;
+    }
+    #map { flex:1; }
+    #mapButtons { position:absolute; right:10px; top:64px; display:flex; flex-direction:column; gap:8px; z-index:4; }
+    .fab {
+      background:#fff; border:1px solid #ddd; border-radius:10px; padding:8px 10px; cursor:pointer; box-shadow:0 2px 8px rgba(0,0,0,.15);
+    }
+    /* Toast */
+    .toast {
+      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+      background: rgba(0,0,0,.75); color:#fff; padding: 8px 12px; border-radius: 10px; z-index:9999; display:none;
+    }
+    /* AR scene wrapper */
+    #arView { position:fixed; inset:0; z-index: 2; display:none; background:#000; }
+    .overlay {
+      position: fixed; left: 0; right: 0; top: 0; background: rgba(0,0,0,.65); color:#fff; z-index: 5;
+      padding: 12px 14px; line-height:1.35; display:none;
+    }
+    .overlay small { opacity:.9 }
+    .overlay button {
+      appearance:none; background:#fff; color:#111; border:0; border-radius:10px; padding:8px 12px;
+      font-weight:600; margin-left:8px;
+    }
+    .backBtn {
+      position: fixed; top: 10px; left: 10px; z-index: 6;
+      background:#fff; color:#111; border:0; border-radius:10px; padding:8px 12px; font-weight:600;
+      box-shadow:0 2px 8px rgba(0,0,0,.25);
+    }
+    .credit {
+      position: fixed; bottom: 8px; right: 10px; background: rgba(255,255,255,.85); color:#111;
+      padding: 6px 10px; border-radius: 10px; font-size:12px; z-index: 5;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Map screen -->
+  <section id="mapView">
+    <div id="topbar">
+      <h1>AR-Bildergalerie – Karte</h1>
+      <button id="startAR">AR starten</button>
+    </div>
+    <div id="map"></div>
+    <div id="mapButtons">
+      <button class="fab" id="locateBtn">📍 Meine Position</button>
+    </div>
+  </section>
+
+  <!-- AR screen -->
+  <section id="arView">
+    <button class="backBtn" id="backBtn">← Karte</button>
+    <div class="overlay" id="overlay">
+      <div><strong>AR-Bildergalerie</strong> – Bitte <strong>Standort</strong> & <strong>Kamera</strong> erlauben.</div>
+      <small>Gehe zu einem markierten Ort. Die Bilder erscheinen in der Umgebung.<br>Hinweis: Draußen warten bis GPS stabil ist.</small>
+      <div style="margin-top:8px;">
+        <button id="okBtn">Verstanden</button>
+      </div>
+    </div>
+    <div class="credit">Made with AR.js (kostenlos)</div>
+
+    <a-scene
+      id="scene"
+      vr-mode-ui="enabled: false"
+      embedded
+      renderer="antialias: true; alpha: true"
+      arjs="sourceType: webcam; videoTexture: true; debugUIEnabled: false;"
+    >
+      <a-camera gps-camera rotation-reader></a-camera>
+
+      <!-- Geolocated images -->
+      <a-image src="assets/master.jpg"
+               gps-entity-place="latitude: 53.60394649745449; longitude: 9.476626047147601"
+               look-at="[gps-camera]"
+               width="5" height="3.125"
+               position="0 2 0">
+      </a-image>
+
+      <a-image src="assets/cavethrone.jpg"
+               gps-entity-place="latitude: 53.60390604383201; longitude: 9.476505355843118"
+               look-at="[gps-camera]"
+               width="5" height="3.125"
+               position="0 2 0">
+      </a-image>
+
+      <a-image src="assets/jacob.jpg"
+               gps-entity-place="latitude: 53.60386941687011; longitude: 9.476397562845984"
+               look-at="[gps-camera]"
+               width="5" height="3.125"
+               position="0 2 0">
+      </a-image>
+
+    </a-scene>
+  </section>
+
+  <div class="toast" id="toast">…</div>
+
+<script>
+  // Points (for map pins). Extend this list to add more images/locations.
+  const points = [
+    {title: "MASTER",    lat: 53.60394649745449, lon: 9.476626047147601},
+    {title: "CAVE THRONE", lat: 53.60390604383201, lon: 9.476505355843118},
+    {title: "JACOB",     lat: 53.60386941687011, lon: 9.476397562845984},
+  ];
+
+  const map = L.map('map');
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap-Mitwirkende'
+  }).addTo(map);
+
+  // Fit map to points
+  const latlngs = points.map(p => [p.lat, p.lon]);
+  const bounds = L.latLngBounds(latlngs);
+  map.fitBounds(bounds.pad(0.25));
+
+  points.forEach(p => {
+    const m = L.marker([p.lat, p.lon]).addTo(map);
+    const btn = `<button onclick="openAR()" style="margin-top:6px;padding:6px 10px;border-radius:8px;border:0;font-weight:600;">In AR öffnen</button>`;
+    m.bindPopup(`<strong>${p.title}</strong><br>Lat: ${p.lat.toFixed(6)}, Lon: ${p.lon.toFixed(6)}<br>${btn}`);
+  });
+
+  // Locate helper
+  const toast = document.getElementById('toast');
+  function showToast(msg, t=1800){ toast.textContent = msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none', t); }
+
+  document.getElementById('locateBtn').addEventListener('click', () => {
+    showToast('Standort wird ermittelt…');
+    map.locate({ setView: true, maxZoom: 18, enableHighAccuracy: true });
+  });
+
+  // Switch between map and AR views
+  const mapView = document.getElementById('mapView');
+  const arView  = document.getElementById('arView');
+  const overlay = document.getElementById('overlay');
+
+  function openAR(){
+    mapView.style.display = 'none';
+    arView.style.display = 'block';
+    overlay.style.display = 'block';
+    // trigger permission prompt early
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        ()=>showToast('Danke! Gleich geht’s los.'),
+        ()=>showToast('Standort nicht erlaubt – bitte aktivieren.'),
+        { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+      );
+    }
+  }
+  window.openAR = openAR; // needed for popup button
+
+  document.getElementById('startAR').addEventListener('click', openAR);
+  document.getElementById('backBtn').addEventListener('click', () => {
+    arView.style.display = 'none';
+    mapView.style.display = 'flex';
+  });
+  document.getElementById('okBtn').addEventListener('click', () => overlay.style.display='none');
+
+  // Desktop hint
+  if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    showToast('Beste Erfahrung: Smartphone verwenden.');
+  }
+</script>
+</body>
+</html>
