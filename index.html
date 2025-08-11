@@ -173,7 +173,8 @@
   const arView  = document.getElementById('arView');
   const overlay = document.getElementById('overlay');
 
-  function openAR(){
+  async function openAR(){
+    await preflightCamera();
     mapView.style.display = 'none';
     arView.style.display = 'block';
     overlay.style.display = 'block';
@@ -194,6 +195,30 @@
     mapView.style.display = 'flex';
   });
   document.getElementById('okBtn').addEventListener('click', () => overlay.style.display='none');
+
+
+  // --- Diagnostics for iOS black-screen issues ---
+  const diag = document.createElement('div');
+  diag.style.cssText = 'position:fixed;left:0;right:0;bottom:0;background:rgba(0,0,0,.7);color:#fff;padding:8px 10px;font-size:12px;z-index:9999;display:none;';
+  document.body.appendChild(diag);
+  function note(msg){ diag.innerHTML = msg; diag.style.display='block'; setTimeout(()=>diag.style.display='none', 6000); }
+
+  if (window.self !== window.top) {
+    note('Hinweis: Diese Seite läuft eingebettet (iframe). Kamera kann blockiert sein. Bitte in Safari im Vollbild öffnen.');
+  }
+  if (!window.isSecureContext) {
+    note('Hinweis: Seite ist nicht über HTTPS geladen. Kamera/Ortung funktionieren dann nicht. Bitte über HTTPS hosten (z. B. GitHub Pages).');
+  }
+
+  async function preflightCamera(){
+    try{
+      const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      s.getTracks().forEach(t => t.stop());
+      showToast('Kamera ok.');
+    }catch(e){
+      note('Kamera-Fehler: ' + (e.message || e.name) + '<br>Tipps: Seite in Safari öffnen, HTTPS verwenden, Kamera erlauben (Einstellungen > Safari > Kamera).');
+    }
+  }
 
   // Desktop hint
   if (!/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
